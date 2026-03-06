@@ -1,0 +1,733 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Timed — App Demo</title>
+<script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+<script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+<script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet"/>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { background: #0d1b0f; font-family: 'DM Sans', sans-serif; }
+::-webkit-scrollbar { width: 3px; }
+::-webkit-scrollbar-thumb { background: #2d6a4f33; border-radius: 2px; }
+@keyframes spin { to { transform: rotate(360deg); } }
+@keyframes fadeUp { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes checkPop { 0% { transform: scale(0) rotate(-30deg); } 70% { transform: scale(1.2); } 100% { transform: scale(1); } }
+.fade-up { animation: fadeUp 0.35s ease forwards; }
+select { -webkit-appearance: none; appearance: none; background: #161f17; color: #e8f5e9; border: none; outline: none; }
+input { outline: none; }
+</style>
+</head>
+<body>
+<div id="root"></div>
+
+<script type="text/babel">
+const { useState, useEffect } = React;
+
+const TIMES = ['6:00 AM','6:30 AM','7:00 AM','7:30 AM','8:00 AM','8:30 AM','9:00 AM','9:30 AM','10:00 AM','10:30 AM','11:00 AM','11:30 AM','12:00 PM','12:30 PM','1:00 PM','1:30 PM','2:00 PM','2:30 PM','3:00 PM','3:30 PM','4:00 PM','4:30 PM','5:00 PM','5:30 PM','6:00 PM'];
+const RADIUS_OPTIONS = [5,10,15,20,30,50];
+
+const HOURLY_WEATHER = {
+  '6:00 AM':{ temp:48, icon:'🌤️', desc:'Partly Cloudy' },
+  '6:30 AM':{ temp:49, icon:'🌤️', desc:'Partly Cloudy' },
+  '7:00 AM':{ temp:51, icon:'🌤️', desc:'Partly Cloudy' },
+  '7:30 AM':{ temp:53, icon:'☀️', desc:'Sunny' },
+  '8:00 AM':{ temp:55, icon:'☀️', desc:'Sunny' },
+  '8:30 AM':{ temp:57, icon:'☀️', desc:'Sunny' },
+  '9:00 AM':{ temp:59, icon:'☀️', desc:'Sunny' },
+  '9:30 AM':{ temp:61, icon:'☀️', desc:'Sunny' },
+  '10:00 AM':{ temp:63, icon:'☀️', desc:'Sunny' },
+  '10:30 AM':{ temp:65, icon:'🌤️', desc:'Mostly Sunny' },
+  '11:00 AM':{ temp:67, icon:'🌤️', desc:'Mostly Sunny' },
+  '11:30 AM':{ temp:68, icon:'🌤️', desc:'Mostly Sunny' },
+  '12:00 PM':{ temp:70, icon:'☀️', desc:'Sunny' },
+  '12:30 PM':{ temp:71, icon:'☀️', desc:'Sunny' },
+  '1:00 PM':{ temp:72, icon:'☀️', desc:'Sunny' },
+  '1:30 PM':{ temp:73, icon:'🌤️', desc:'Mostly Sunny' },
+  '2:00 PM':{ temp:72, icon:'🌤️', desc:'Mostly Sunny' },
+  '2:30 PM':{ temp:71, icon:'⛅', desc:'Partly Cloudy' },
+  '3:00 PM':{ temp:70, icon:'⛅', desc:'Partly Cloudy' },
+  '3:30 PM':{ temp:68, icon:'🌥️', desc:'Mostly Cloudy' },
+  '4:00 PM':{ temp:66, icon:'🌥️', desc:'Mostly Cloudy' },
+  '4:30 PM':{ temp:64, icon:'🌦️', desc:'Light Showers' },
+  '5:00 PM':{ temp:62, icon:'🌦️', desc:'Light Showers' },
+  '5:30 PM':{ temp:60, icon:'🌧️', desc:'Showers' },
+  '6:00 PM':{ temp:58, icon:'🌧️', desc:'Showers' },
+};
+
+const COURSES = [
+  { id:1, name:'Fossil Trace Golf Club', distance:2.1, price:65, rating:4.8, holes:[9,18], rangeOpen:true, city:'Golden, CO', par:72, phone:'(303) 277-8750', barHours:'11:00 AM – 9:00 PM', barName:'The Fossil Bar & Grill', description:"Stunning course carved into a fossil-laden hillside. One of Denver's most unique layouts.", times:['6:00 AM','7:30 AM','9:00 AM','10:30 AM','12:00 PM','1:00 PM','2:12 PM','3:30 PM','4:15 PM','5:00 PM'] },
+  { id:2, name:'CommonGround Golf Course', distance:4.7, price:48, rating:4.5, holes:[18], rangeOpen:true, city:'Aurora, CO', par:71, phone:'(720) 870-6900', barHours:'10:00 AM – 8:00 PM', barName:'CommonGround Grill', description:"Colorado's public golf gem. Welcoming for all skill levels.", times:['7:00 AM','8:30 AM','10:00 AM','11:30 AM','12:30 PM','1:10 PM','2:00 PM','3:10 PM','4:00 PM'] },
+  { id:3, name:'Bear Creek Golf Club', distance:8.2, price:39, rating:4.3, holes:[9], rangeOpen:false, city:'Lakewood, CO', par:35, phone:'(303) 986-5508', barHours:'Closed Today', barName:'Bear Creek Snack Bar', description:'Quick 9-hole round perfect for after work. Walking friendly with great views.', times:['8:00 AM','9:00 AM','10:00 AM','11:00 AM','12:00 PM','12:30 PM','1:30 PM','2:30 PM','3:30 PM','4:30 PM'] },
+  { id:4, name:'Arrowhead Golf Club', distance:6.3, price:95, rating:4.9, holes:[18], rangeOpen:true, city:'Littleton, CO', par:70, phone:'(303) 973-9614', barHours:'11:00 AM – 10:00 PM', barName:'Red Rock Grille', description:'Breathtaking red rock scenery. One of the most photographed courses in Colorado.', times:['6:30 AM','8:00 AM','9:30 AM','11:00 AM','1:00 PM','2:00 PM','3:00 PM','4:00 PM','5:00 PM'] },
+  { id:5, name:'Overland Park Golf Course', distance:5.1, price:42, rating:4.4, holes:[9,18], rangeOpen:false, city:'Denver, CO', par:72, phone:'(303) 698-4080', barHours:'9:00 AM – 7:00 PM', barName:'Overland Tap Room', description:'Classic Denver public course. Great for beginners and casual rounds.', times:['7:30 AM','9:00 AM','10:30 AM','12:00 PM','1:24 PM','2:06 PM','2:54 PM','3:42 PM','4:18 PM'] },
+  { id:6, name:'Raccoon Creek Golf Course', distance:11.4, price:44, rating:4.2, holes:[18], rangeOpen:true, city:'Littleton, CO', par:72, phone:'(303) 973-4653', barHours:'10:30 AM – 8:30 PM', barName:'Creek Side Bar & Grill', description:'Scenic course with wide fairways, great for groups.', times:['7:00 AM','8:30 AM','10:00 AM','12:00 PM','1:30 PM','3:00 PM','4:30 PM'] },
+];
+
+const FRIENDS_DATA = [
+  { id:1, name:'Jake Miller', initials:'JM', color:'#3b82f6', venmo:'@jake-miller-golf', rounds:8, lastPlayed:'Fossil Trace', mutualCourses:3 },
+  { id:2, name:'Sara Torres', initials:'ST', color:'#ec4899', venmo:'@sara-tee', rounds:5, lastPlayed:'CommonGround', mutualCourses:2 },
+  { id:3, name:'Chris Rivera', initials:'CR', color:'#f97316', venmo:'@chrisr22', rounds:12, lastPlayed:'Arrowhead', mutualCourses:4 },
+  { id:4, name:'Marcus Webb', initials:'MW', color:'#a855f7', venmo:'@marcus-webb', rounds:3, lastPlayed:'Bear Creek', mutualCourses:1 },
+];
+
+const PAST_ROUNDS = [
+  { id:1, course:'Fossil Trace Golf Club', date:'Feb 28', time:'1:00 PM', players:3, paid:65, holes:18, confirmation:'#TM-A4X2K1', score:null },
+  { id:2, course:'Arrowhead Golf Club', date:'Feb 10', time:'2:00 PM', players:2, paid:95, holes:18, confirmation:'#TM-C9P4N3', score:88 },
+];
+
+const UPCOMING_ROUNDS = [
+  { id:3, course:'Bear Creek Golf Club', date:'Mar 8', time:'12:30 PM', players:2, paid:39, holes:9, confirmation:'#TM-D2Q5L4' },
+];
+
+const NOTIFICATIONS = [
+  { id:1, icon:'💙', text:'Jake Miller paid his share — $66.50 via Venmo', time:'2m ago', unread:true },
+  { id:2, icon:'⛳', text:'Tee time reminder: Fossil Trace tomorrow at 1:00 PM', time:'1h ago', unread:true },
+  { id:3, icon:'👥', text:'Sara Torres joined your group for Bear Creek', time:'3h ago', unread:false },
+  { id:4, icon:'🏌️', text:'New tee times available at Arrowhead Golf Club', time:'Yesterday', unread:false },
+];
+
+const timeToMins = (t) => {
+  const parts = t.split(' '); const ampm = parts[1];
+  let [h,m] = parts[0].split(':').map(Number);
+  if (ampm==='PM'&&h!==12) h+=12;
+  if (ampm==='AM'&&h===12) h=0;
+  return h*60+m;
+};
+
+const getDates = () => {
+  const dates=[]; const days=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+  const months=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  const today=new Date();
+  for(let i=0;i<7;i++){
+    const d=new Date(today); d.setDate(today.getDate()+i);
+    dates.push({ label:i===0?'Today':i===1?'Tomorrow':days[d.getDay()], sublabel:`${months[d.getMonth()]} ${d.getDate()}`, full:i===0?'Today':`${days[d.getDay()]}, ${months[d.getMonth()]} ${d.getDate()}`, index:i });
+  }
+  return dates;
+};
+
+const C = {
+  bg:'#0d1b0f', card:'#161f17', card2:'#1a2e1c',
+  green:'#52b788', greenDark:'#2d6a4f', greenDim:'#1f3522',
+  text:'#e8f5e9', muted:'#4a7c59', border:'#1f3522',
+  yellow:'#f4c242', red:'#f87171', blue:'#60a5fa',
+};
+
+const s = {
+  container:{ flex:1, backgroundColor:C.bg, minHeight:'100vh', display:'flex', flexDirection:'column' },
+  scroll:{ flex:1, overflowY:'auto', WebkitOverflowScrolling:'touch' },
+  content:{ padding:'56px 22px 20px' },
+  logo:{ fontSize:22, color:C.green, fontWeight:800, letterSpacing:4, marginBottom:10, fontFamily:"'Bebas Neue', sans-serif" },
+  clockBox:{ backgroundColor:C.card, borderRadius:16, padding:14, marginBottom:18, border:`1px solid ${C.border}` },
+  clockRow:{ display:'flex', alignItems:'center', justifyContent:'space-between' },
+  clockTime:{ fontSize:26, fontWeight:800, color:C.text, letterSpacing:1 },
+  clockSec:{ fontSize:16, color:C.muted },
+  clockAmpm:{ fontSize:14, color:C.green, fontWeight:600 },
+  clockDate:{ fontSize:12, color:C.muted, marginTop:2 },
+  weatherBox:{ alignItems:'center', backgroundColor:C.card2, borderRadius:12, padding:'8px 12px', textAlign:'center', minWidth:72 },
+  heading:{ fontSize:24, fontWeight:700, color:C.text, lineHeight:1.3, marginBottom:8 },
+  subloc:{ fontSize:13, color:C.muted, marginBottom:6 },
+  desc:{ fontSize:13, color:'#aab8a4', lineHeight:1.6, marginBottom:16 },
+  label:{ fontSize:10, fontWeight:700, color:C.muted, letterSpacing:1, marginBottom:8, marginTop:6, textTransform:'uppercase' },
+  subLabel:{ fontSize:13, fontWeight:600, color:C.muted, marginBottom:10 },
+  back:{ color:C.green, fontSize:18, marginBottom:14, cursor:'pointer', background:'none', border:'none', padding:0 },
+  row:{ display:'flex', gap:8, marginBottom:16 },
+  pill:{ flex:1, padding:11, borderRadius:14, border:`2px solid ${C.border}`, backgroundColor:C.card, textAlign:'center', cursor:'pointer' },
+  pillActive:{ border:`2px solid ${C.green}`, backgroundColor:'rgba(82,183,136,0.12)' },
+  pillText:{ fontSize:12, fontWeight:700, color:C.muted },
+  pillTextActive:{ color:C.green },
+  dateChip:{ padding:'8px 14px', borderRadius:14, border:`1.5px solid ${C.border}`, backgroundColor:C.card, marginRight:8, textAlign:'center', minWidth:60, cursor:'pointer', flexShrink:0 },
+  dateChipActive:{ border:`1.5px solid ${C.green}`, backgroundColor:'rgba(82,183,136,0.12)' },
+  zipWrap:{ display:'flex', alignItems:'center', backgroundColor:C.card, borderRadius:14, border:`2px solid ${C.border}`, padding:'4px 14px', marginBottom:14 },
+  zipInput:{ flex:1, fontSize:15, fontWeight:700, color:C.text, background:'none', border:'none', padding:'9px 0' },
+  radiusRow:{ display:'flex', gap:8, marginBottom:14, flexWrap:'wrap' },
+  radiusPill:{ padding:'8px 13px', borderRadius:20, border:`1.5px solid ${C.border}`, backgroundColor:C.card, cursor:'pointer' },
+  radiusPillActive:{ border:`1.5px solid ${C.green}`, backgroundColor:'rgba(82,183,136,0.12)' },
+  rangePreview:{ display:'flex', alignItems:'center', gap:10, backgroundColor:'rgba(82,183,136,0.07)', borderRadius:14, padding:12, marginBottom:18, border:`1px solid ${C.border}` },
+  rangeDisplay:{ display:'flex', alignItems:'center', justifyContent:'center', gap:16, backgroundColor:C.card, borderRadius:18, padding:14, marginBottom:14, border:`1px solid ${C.border}` },
+  rangeBox:{ textAlign:'center', flex:1 },
+  rangeLabel:{ fontSize:10, fontWeight:700, color:C.muted, letterSpacing:1, marginBottom:4 },
+  rangeTime:{ fontSize:16, fontWeight:800, color:C.green },
+  timeScroll:{ display:'flex', overflowX:'auto', marginBottom:14, gap:0, WebkitOverflowScrolling:'touch' },
+  timeChip:{ padding:'8px 12px', borderRadius:20, border:`1.5px solid ${C.border}`, backgroundColor:C.card, marginRight:6, cursor:'pointer', flexShrink:0 },
+  timeChipActive:{ border:`1.5px solid ${C.green}`, backgroundColor:'rgba(82,183,136,0.12)' },
+  searchBtn:{ width:'100%', padding:16, background:'linear-gradient(135deg, #2d6a4f, #52b788)', border:'none', borderRadius:18, color:C.text, fontSize:14, fontWeight:700, cursor:'pointer', marginTop:8 },
+  searchBtnDisabled:{ background:C.card2, opacity:0.6, cursor:'default' },
+  card:{ backgroundColor:C.card, borderRadius:20, padding:16, marginBottom:12, border:`1px solid ${C.border}` },
+  courseName:{ fontSize:14, fontWeight:700, color:C.text, flex:1, marginRight:8 },
+  coursePrice:{ fontSize:16, fontWeight:800, color:C.green },
+  badgeRow:{ display:'flex', gap:8, marginBottom:8, flexWrap:'wrap' },
+  distBadge:{ padding:'4px 10px', borderRadius:20, border:'1px solid #1d4ed8', backgroundColor:'rgba(96,165,250,0.08)', fontSize:11, fontWeight:700, color:C.blue },
+  rangeBadge:{ padding:'4px 10px', borderRadius:20, border:'1px solid', fontSize:11, fontWeight:700 },
+  statsRow:{ display:'flex', gap:10, marginBottom:14 },
+  statBox:{ flex:1, backgroundColor:C.card, borderRadius:14, padding:'10px 8px', textAlign:'center', border:`1px solid ${C.border}` },
+  statVal:{ fontSize:13, fontWeight:700, color:C.text, marginBottom:2 },
+  statLabel:{ fontSize:10, color:C.muted },
+  priceBox:{ backgroundColor:C.card, borderRadius:14, padding:14, marginBottom:14, border:`1px solid ${C.border}` },
+  timesGrid:{ display:'flex', flexWrap:'wrap', gap:8, marginBottom:14 },
+  teeChip:{ padding:'8px 12px', backgroundColor:'rgba(82,183,136,0.1)', borderRadius:10, border:`1px solid ${C.greenDark}`, cursor:'pointer', textAlign:'center' },
+  teeChipActive:{ border:`2px solid ${C.green}`, backgroundColor:'rgba(82,183,136,0.18)' },
+  payCard:{ backgroundColor:C.card, borderRadius:14, padding:12, marginBottom:8, border:`1px solid ${C.border}`, display:'flex', alignItems:'center', gap:10 },
+  payBtn:{ padding:'7px 12px', backgroundColor:'rgba(82,183,136,0.12)', borderRadius:10, border:`1px solid ${C.greenDark}`, cursor:'pointer', fontSize:11, fontWeight:700, color:C.green },
+  infoBox:{ backgroundColor:'rgba(82,183,136,0.07)', borderRadius:14, padding:12, border:`1px solid ${C.border}`, marginTop:8 },
+  confirmIcon:{ width:64, height:64, borderRadius:32, backgroundColor:C.greenDark, display:'flex', alignItems:'center', justifyContent:'center', margin:'0 auto 16px', fontSize:28 },
+  confirmRow:{ display:'flex', justifyContent:'space-between', padding:'9px 0', borderBottom:`1px solid ${C.border}` },
+  friendCard:{ backgroundColor:C.card, borderRadius:16, padding:12, marginBottom:8, border:`1px solid ${C.border}`, display:'flex', alignItems:'center', gap:10, cursor:'pointer' },
+  scoreSection:{ marginTop:10, paddingTop:10, borderTop:`1px solid ${C.border}` },
+  scoreBadge:{ backgroundColor:'rgba(82,183,136,0.1)', borderRadius:12, padding:'8px 14px', border:`1px solid ${C.greenDark}`, textAlign:'center', minWidth:80 },
+  bottomNav:{ display:'flex', backgroundColor:'#0a120b', borderTop:`1px solid ${C.card2}`, paddingBottom:16, paddingTop:8, flexShrink:0 },
+  navItem:{ flex:1, display:'flex', flexDirection:'column', alignItems:'center', paddingTop:6, cursor:'pointer', background:'none', border:'none' },
+  navDot:{ width:4, height:4, borderRadius:2, backgroundColor:C.green, marginTop:3 },
+};
+
+function Avatar({ initials, color, size=38 }) {
+  return (
+    <div style={{ width:size, height:size, borderRadius:size/2, backgroundColor:color+'22', border:`2px solid ${color}55`, display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0 }}>
+      <span style={{ fontSize:size*0.3, fontWeight:800, color }}>{initials}</span>
+    </div>
+  );
+}
+
+function Lbl({ children }) {
+  return <div style={s.label}>{children}</div>;
+}
+
+function LiveClock() {
+  const [time, setTime] = useState(new Date());
+  useEffect(() => { const t = setInterval(() => setTime(new Date()), 1000); return () => clearInterval(t); }, []);
+  const h=time.getHours(), m=time.getMinutes().toString().padStart(2,'0'), sec=time.getSeconds().toString().padStart(2,'0');
+  const ampm=h>=12?'PM':'AM', dh=h%12||12;
+  const days=['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+  const months=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  const now = new Date(); const rh=now.getHours(), rm=now.getMinutes();
+  const a=rh>=12?'PM':'AM', dh2=rh%12||12, rm2=rm<30?'00':'30';
+  const wkey=`${dh2}:${rm2} ${a}`;
+  const w=HOURLY_WEATHER[wkey]||{temp:68,icon:'☀️',desc:'Sunny'};
+  return (
+    <div style={s.clockBox}>
+      <div style={s.clockRow}>
+        <div>
+          <div style={s.clockTime}>{dh}:{m}<span style={s.clockSec}>:{sec}</span> <span style={s.clockAmpm}>{ampm}</span></div>
+          <div style={s.clockDate}>{days[time.getDay()]}, {months[time.getMonth()]} {time.getDate()}</div>
+        </div>
+        <div style={s.weatherBox}>
+          <div style={{fontSize:20}}>{w.icon}</div>
+          <div style={{fontSize:15,fontWeight:800,color:C.text}}>{w.temp}°F</div>
+          <div style={{fontSize:10,color:C.muted}}>{w.desc}</div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function App() {
+  const [tab, setTab] = useState('explore');
+  const [screen, setScreen] = useState('search');
+  const [groupSize, setGroupSize] = useState(2);
+  const [startTime, setStartTime] = useState('12:00 PM');
+  const [endTime, setEndTime] = useState('3:00 PM');
+  const [holesFilter, setHolesFilter] = useState('any');
+  const [zip, setZip] = useState('80202');
+  const [radius, setRadius] = useState(20);
+  const [selDate, setSelDate] = useState(getDates()[0]);
+  const [results, setResults] = useState([]);
+  const [selCourse, setSelCourse] = useState(null);
+  const [selTime, setSelTime] = useState(null);
+  const [favorites, setFavorites] = useState([1,4]);
+  const [unread, setUnread] = useState(2);
+  const [rounds, setRounds] = useState({ past:PAST_ROUNDS, upcoming:UPCOMING_ROUNDS });
+
+  const search = () => {
+    const sm=timeToMins(startTime), em=timeToMins(endTime);
+    const r=COURSES.filter(c=>c.distance<=radius).filter(c=>holesFilter==='any'||c.holes.includes(parseInt(holesFilter))).map(c=>({...c,availableTimes:c.times.filter(t=>{const m=timeToMins(t);return m>=sm&&m<=em;})})).filter(c=>c.availableTimes.length>0).sort((a,b)=>a.distance-b.distance);
+    setResults(r); setScreen('results');
+  };
+
+  const toggleFav = (id) => setFavorites(p=>p.includes(id)?p.filter(f=>f!==id):[...p,id]);
+  const saveScore = (id, score) => setRounds(p=>({...p,past:p.past.map(r=>r.id===id?{...r,score}:r)}));
+
+  const goTab = (t) => { setTab(t); if(t==='explore') setScreen('search'); if(t==='profile') setUnread(0); };
+
+  const renderScreen = () => {
+    if(tab==='explore'){
+      if(screen==='search') return <SearchScreen groupSize={groupSize} setGroupSize={setGroupSize} startTime={startTime} setStartTime={setStartTime} endTime={endTime} setEndTime={setEndTime} holesFilter={holesFilter} setHolesFilter={setHolesFilter} zip={zip} setZip={setZip} radius={radius} setRadius={setRadius} selDate={selDate} setSelDate={setSelDate} onSearch={search} />;
+      if(screen==='results') return <ResultsScreen courses={results} groupSize={groupSize} startTime={startTime} endTime={endTime} radius={radius} zip={zip} selDate={selDate} favorites={favorites} toggleFav={toggleFav} onBack={()=>setScreen('search')} onSelect={(c)=>{setSelCourse(c);setSelTime(null);setScreen('detail');}} />;
+      if(screen==='detail') return <DetailScreen course={selCourse} groupSize={groupSize} selTime={selTime} setSelTime={setSelTime} favorites={favorites} toggleFav={toggleFav} selDate={selDate} onBack={()=>setScreen('results')} onBook={()=>setScreen('grouppay')} />;
+      if(screen==='grouppay') return <GroupPayScreen course={selCourse} groupSize={groupSize} selTime={selTime} selDate={selDate} onBack={()=>setScreen('detail')} onDone={()=>setScreen('confirm')} />;
+      if(screen==='confirm') return <ConfirmScreen course={selCourse} groupSize={groupSize} selTime={selTime} selDate={selDate} onDone={()=>setScreen('search')} />;
+    }
+    if(tab==='rounds') return <RoundsScreen rounds={rounds} saveScore={saveScore} onBook={()=>{setTab('explore');setScreen('search');}} />;
+    if(tab==='friends') return <FriendsScreen />;
+    if(tab==='profile') return <ProfileScreen favorites={favorites} unread={unread} />;
+    if(tab==='notifications') return <NotifScreen onBack={()=>setTab('profile')} />;
+  };
+
+  return (
+    <div style={s.container}>
+      <div style={s.scroll}><div style={s.content}>{renderScreen()}</div></div>
+      <div style={s.bottomNav}>
+        {[['explore','⛳','Explore'],['rounds','📅','Rounds'],['friends','👥','Friends'],['profile','👤','Profile']].map(([id,icon,label])=>(
+          <button key={id} style={s.navItem} onClick={()=>goTab(id)}>
+            <div style={{position:'relative'}}>
+              <span style={{fontSize:20}}>{icon}</span>
+              {id==='profile'&&unread>0&&<div style={{position:'absolute',top:-4,right:-8,background:C.red,borderRadius:10,minWidth:14,height:14,display:'flex',alignItems:'center',justifyContent:'center',padding:'0 3px'}}><span style={{fontSize:9,fontWeight:800,color:'white'}}>{unread}</span></div>}
+            </div>
+            <span style={{fontSize:9,fontWeight:600,color:tab===id?C.green:C.muted,marginTop:3}}>{label}</span>
+            {tab===id&&<div style={s.navDot}/>}
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function SearchScreen({groupSize,setGroupSize,startTime,setStartTime,endTime,setEndTime,holesFilter,setHolesFilter,zip,setZip,radius,setRadius,selDate,setSelDate,onSearch}) {
+  const isValid=timeToMins(endTime)>timeToMins(startTime);
+  const isZip=zip.length===5&&!isNaN(zip);
+  const inRange=COURSES.filter(c=>c.distance<=radius).length;
+  const dates=getDates();
+  return (
+    <div>
+      <div style={s.logo}>⛳ TIMED</div>
+      <LiveClock/>
+      <div style={s.heading}>Find your perfect<br/>tee time.</div>
+
+      <Lbl>SELECT DATE</Lbl>
+      <div style={{display:'flex',overflowX:'auto',marginBottom:18,WebkitOverflowScrolling:'touch'}}>
+        {dates.map(d=>(
+          <div key={d.index} onClick={()=>setSelDate(d)} style={{...s.dateChip,...(selDate.index===d.index?s.dateChipActive:{})}}>
+            <div style={{fontSize:12,fontWeight:700,color:selDate.index===d.index?C.green:C.muted}}>{d.label}</div>
+            <div style={{fontSize:10,color:selDate.index===d.index?C.green:'#2d6a4f',marginTop:2}}>{d.sublabel}</div>
+          </div>
+        ))}
+      </div>
+
+      <Lbl>📍 YOUR LOCATION</Lbl>
+      <div style={s.zipWrap}>
+        <span style={{fontSize:15,marginRight:8}}>🏠</span>
+        <input style={s.zipInput} value={zip} onChange={e=>setZip(e.target.value.replace(/[^0-9]/g,'').slice(0,5))} placeholder="Enter zip code" maxLength={5}/>
+        {isZip&&<span style={{color:C.green,fontWeight:700}}>✓</span>}
+      </div>
+      <div style={s.subLabel}>Search radius:</div>
+      <div style={s.radiusRow}>
+        {RADIUS_OPTIONS.map(r=>(
+          <div key={r} onClick={()=>setRadius(r)} style={{...s.radiusPill,...(radius===r?s.radiusPillActive:{})}}>
+            <span style={{fontSize:12,fontWeight:700,color:radius===r?C.green:C.muted}}>{r} mi</span>
+          </div>
+        ))}
+      </div>
+      <div style={s.rangePreview}>
+        <span style={{fontSize:16}}>🗺️</span>
+        <span style={{fontSize:13,color:C.muted}}><span style={{color:C.green,fontWeight:700}}>{inRange} courses</span> within <span style={{color:C.green,fontWeight:700}}>{radius} miles</span> of {zip||'your zip'}</span>
+      </div>
+
+      <Lbl>HOW MANY PLAYERS?</Lbl>
+      <div style={s.row}>
+        {[1,2,3,4].map(n=>(
+          <div key={n} onClick={()=>setGroupSize(n)} style={{...s.pill,...(groupSize===n?s.pillActive:{})}}>
+            <span style={{...s.pillText,...(groupSize===n?s.pillTextActive:{})}}>{n===1?'Solo':`${n}x`}</span>
+          </div>
+        ))}
+      </div>
+
+      <Lbl>HOLES</Lbl>
+      <div style={s.row}>
+        {[['any','Any'],['9','9 Holes'],['18','18 Holes']].map(([val,label])=>(
+          <div key={val} onClick={()=>setHolesFilter(val)} style={{...s.pill,...(holesFilter===val?s.pillActive:{})}}>
+            <span style={{...s.pillText,...(holesFilter===val?s.pillTextActive:{})}}>{label}</span>
+          </div>
+        ))}
+      </div>
+
+      <Lbl>AVAILABLE WINDOW</Lbl>
+      <div style={s.rangeDisplay}>
+        <div style={s.rangeBox}><div style={s.rangeLabel}>FROM</div><div style={s.rangeTime}>{startTime}</div></div>
+        <span style={{fontSize:18,color:C.greenDark,fontWeight:700}}>→</span>
+        <div style={s.rangeBox}><div style={s.rangeLabel}>TO</div><div style={s.rangeTime}>{endTime}</div></div>
+      </div>
+      {!isValid&&<div style={{fontSize:12,color:C.red,marginBottom:10,textAlign:'center'}}>⚠️ End time must be after start time</div>}
+
+      <div style={s.subLabel}>Start anytime after:</div>
+      <div style={s.timeScroll}>
+        {TIMES.map(t=>(
+          <div key={t} onClick={()=>setStartTime(t)} style={{...s.timeChip,...(startTime===t?s.timeChipActive:{})}}>
+            <span style={{fontSize:12,fontWeight:600,color:startTime===t?C.green:C.muted}}>{t}</span>
+          </div>
+        ))}
+      </div>
+      <div style={s.subLabel}>Must tee off before:</div>
+      <div style={s.timeScroll}>
+        {TIMES.map(t=>(
+          <div key={t} onClick={()=>setEndTime(t)} style={{...s.timeChip,...(endTime===t?s.timeChipActive:{})}}>
+            <span style={{fontSize:12,fontWeight:600,color:endTime===t?C.green:C.muted}}>{t}</span>
+          </div>
+        ))}
+      </div>
+
+      <button style={{...s.searchBtn,...((!isValid||!isZip)?s.searchBtnDisabled:{})}} onClick={isValid&&isZip?onSearch:null}>
+        {!isZip?'Enter a valid zip code':!isValid?'Set a valid time range':`⛳ Search ${selDate.label} within ${radius} mi`}
+      </button>
+    </div>
+  );
+}
+
+function ResultsScreen({courses,groupSize,startTime,endTime,radius,zip,selDate,favorites,toggleFav,onBack,onSelect}) {
+  return (
+    <div>
+      <button style={s.back} onClick={onBack}>← Back</button>
+      <div style={s.heading}>{courses.length>0?`${courses.length} courses found`:'No courses found'}</div>
+      <div style={s.subloc}>{groupSize} players · {selDate.full}</div>
+      <div style={s.subloc}>{startTime} – {endTime} · within {radius} mi of {zip}</div>
+      {courses.length===0&&<div style={{textAlign:'center',padding:40}}><div style={{fontSize:40,marginBottom:12}}>🏌️</div><div style={{color:C.muted,fontSize:14}}>No tee times match. Try wider radius or time range!</div></div>}
+      {courses.map(c=>(
+        <div key={c.id} style={{...s.card,cursor:'pointer'}} onClick={()=>onSelect(c)}>
+          <div style={{display:'flex',justifyContent:'space-between',alignItems:'flex-start',marginBottom:4}}>
+            <span style={s.courseName}>{c.name}</span>
+            <span onClick={e=>{e.stopPropagation();toggleFav(c.id);}} style={{fontSize:18,cursor:'pointer'}}>{favorites.includes(c.id)?'❤️':'🤍'}</span>
+          </div>
+          <div style={{fontSize:15,fontWeight:800,color:C.green,marginBottom:8}}>${c.price}<span style={{fontSize:11,fontWeight:400,color:C.muted}}>/player</span></div>
+          <div style={s.badgeRow}>
+            <div style={s.distBadge}>📍 {c.distance} mi</div>
+            <div style={{...s.rangeBadge,borderColor:c.rangeOpen?C.greenDark:'#7f1d1d',backgroundColor:c.rangeOpen?'rgba(82,183,136,0.08)':'rgba(248,113,113,0.08)',color:c.rangeOpen?C.green:C.red}}>{c.rangeOpen?'🟢 Range Open':'🔴 Range Closed'}</div>
+          </div>
+          <div style={{fontSize:12,color:C.muted,marginBottom:8}}>{c.city} · {c.holes.join(' or ')} holes · ★ {c.rating}</div>
+          <div style={{fontSize:11,fontWeight:600,color:C.muted,marginBottom:6}}>{c.availableTimes.length} times in your window:</div>
+          <div style={{display:'flex',flexWrap:'wrap',gap:6}}>
+            {c.availableTimes.slice(0,4).map(t=><span key={t} style={{padding:'5px 10px',backgroundColor:'rgba(82,183,136,0.1)',borderRadius:8,border:`1px solid ${C.greenDark}`,fontSize:11,fontWeight:600,color:C.green}}>{t}</span>)}
+            {c.availableTimes.length>4&&<span style={{padding:'5px 10px',color:C.muted,fontSize:11}}>+{c.availableTimes.length-4} more</span>}
+          </div>
+          <div style={{fontSize:11,color:'#2d6a4f',marginTop:8,textAlign:'right'}}>Tap to book →</div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function DetailScreen({course,groupSize,selTime,setSelTime,favorites,toggleFav,selDate,onBack,onBook}) {
+  const total=((course.price+1.5)*groupSize).toFixed(2);
+  const barOpen=course.barHours!=='Closed Today';
+  const w=selTime?HOURLY_WEATHER[selTime]:null;
+  return (
+    <div>
+      <button style={s.back} onClick={onBack}>← Back</button>
+      <div style={{display:'flex',justifyContent:'space-between',alignItems:'flex-start'}}>
+        <div style={{...s.heading,flex:1,marginRight:12}}>{course.name}</div>
+        <span onClick={()=>toggleFav(course.id)} style={{fontSize:24,cursor:'pointer',paddingTop:4}}>{favorites.includes(course.id)?'❤️':'🤍'}</span>
+      </div>
+      <div style={s.subloc}>📍 {course.city} · {course.distance} mi · 📞 {course.phone}</div>
+      <div style={s.desc}>{course.description}</div>
+      <div style={s.statsRow}>
+        {[['★ '+course.rating,'Rating'],['Par '+course.par,'Course'],[course.holes.join('/'),'Holes']].map(([v,l])=>(
+          <div key={l} style={s.statBox}><div style={s.statVal}>{v}</div><div style={s.statLabel}>{l}</div></div>
+        ))}
+      </div>
+      <div style={{...s.card,textAlign:'center',padding:12,marginBottom:10,borderColor:course.rangeOpen?C.greenDark:'#7f1d1d',backgroundColor:course.rangeOpen?'rgba(82,183,136,0.06)':'rgba(248,113,113,0.06)'}}>
+        <span style={{fontSize:13,fontWeight:700,color:course.rangeOpen?C.green:C.red}}>{course.rangeOpen?'🟢 Driving Range Open Today':'🔴 Driving Range Closed Today'}</span>
+      </div>
+      <div style={{...s.card,textAlign:'center',padding:12,marginBottom:14,borderColor:barOpen?'#92400e':'#374151',backgroundColor:barOpen?'rgba(251,191,36,0.06)':'rgba(107,114,128,0.06)'}}>
+        <div style={{fontSize:13,fontWeight:700,color:barOpen?'#fbbf24':'#6b7280'}}>{barOpen?'🍺':'🚫'} {course.barName}</div>
+        <div style={{fontSize:11,color:barOpen?'#92400e':'#374151',marginTop:2}}>{barOpen?`Open ${course.barHours}`:'Closed Today'}</div>
+      </div>
+      <div style={s.priceBox}>
+        <div style={{fontSize:20,fontWeight:800,color:C.green}}>${course.price}<span style={{fontSize:11,fontWeight:400,color:C.muted}}> /player</span></div>
+        <div style={{fontSize:12,color:C.muted,marginTop:4}}>Total for {groupSize} on {selDate.full}: ${total} incl. fee</div>
+      </div>
+      <Lbl>SELECT YOUR TEE TIME</Lbl>
+      <div style={s.timesGrid}>
+        {course.times.map(t=>{
+          const tw=HOURLY_WEATHER[t];
+          return (
+            <div key={t} onClick={()=>setSelTime(t)} style={{...s.teeChip,...(selTime===t?s.teeChipActive:{})}}>
+              <div style={{fontSize:13,fontWeight:600,color:selTime===t?C.green:C.muted}}>{t}</div>
+              {tw&&<div style={{fontSize:10,color:selTime===t?C.green:'#2d6a4f',marginTop:2}}>{tw.icon} {tw.temp}°</div>}
+            </div>
+          );
+        })}
+      </div>
+      {selTime&&w&&(
+        <div style={{...s.infoBox,marginBottom:14}}>
+          <div style={{fontSize:11,fontWeight:700,color:C.muted,letterSpacing:1,marginBottom:8}}>🌤️ WEATHER AT {selTime.toUpperCase()}</div>
+          <div style={{display:'flex',alignItems:'center',gap:12}}>
+            <span style={{fontSize:28}}>{w.icon}</span>
+            <div>
+              <div style={{fontSize:20,fontWeight:800,color:C.text}}>{w.temp}°F</div>
+              <div style={{fontSize:12,color:C.muted}}>{w.desc}</div>
+            </div>
+            <div style={{flex:1}}>
+              {w.temp<55&&<div style={{fontSize:12,color:C.green,fontWeight:600}}>🧥 Bring a jacket</div>}
+              {w.temp>=75&&<div style={{fontSize:12,color:C.green,fontWeight:600}}>🧴 Wear sunscreen</div>}
+              {w.desc.includes('Shower')&&<div style={{fontSize:12,color:C.green,fontWeight:600}}>☂️ Bring rain gear</div>}
+              {w.temp>=60&&w.temp<75&&!w.desc.includes('Shower')&&<div style={{fontSize:12,color:C.green,fontWeight:600}}>👌 Perfect conditions</div>}
+            </div>
+          </div>
+        </div>
+      )}
+      <button style={{...s.searchBtn,...(!selTime?s.searchBtnDisabled:{})}} onClick={selTime?onBook:null}>
+        {selTime?`Book ${selTime} · Split with Group →`:'Select a tee time to continue'}
+      </button>
+    </div>
+  );
+}
+
+function GroupPayScreen({course,groupSize,selTime,selDate,onBack,onDone}) {
+  const priceEach=(course.price+1.5).toFixed(2);
+  const total=(parseFloat(priceEach)*groupSize).toFixed(2);
+  const friends=FRIENDS_DATA.slice(0,groupSize-1);
+  const [paidIds,setPaidIds]=useState([]);
+  const [myPaid,setMyPaid]=useState(false);
+  const [paying,setPaying]=useState(false);
+  const [method,setMethod]=useState('apple');
+  const paidCount=paidIds.length+(myPaid?1:0);
+  const handleMyPay=()=>{setPaying(true);setTimeout(()=>{setPaying(false);setMyPaid(true);},1400);};
+  useEffect(()=>{if(myPaid&&(friends.length===0||paidIds.length===friends.length))setTimeout(onDone,600);},[myPaid,paidIds]);
+  return (
+    <div>
+      <button style={s.back} onClick={onBack}>← Back</button>
+      <div style={s.heading}>Split the Cost 💸</div>
+      <div style={s.subloc}>{course.name} · {selTime} · {selDate.full}</div>
+      <div style={{marginBottom:16}}>
+        <div style={{display:'flex',justifyContent:'space-between',marginBottom:6}}>
+          <span style={{fontSize:12,color:C.muted,fontWeight:600}}>{paidCount} of {groupSize} paid</span>
+          <span style={{fontSize:12,color:C.green,fontWeight:600}}>${(paidCount*parseFloat(priceEach)).toFixed(2)} / ${total}</span>
+        </div>
+        <div style={{backgroundColor:C.card2,borderRadius:20,height:7,overflow:'hidden'}}>
+          <div style={{width:`${(paidCount/groupSize)*100}%`,height:'100%',background:`linear-gradient(90deg,${C.greenDark},${C.green})`,borderRadius:20,transition:'width 0.4s'}}/>
+        </div>
+      </div>
+      <div style={s.priceBox}>
+        <div style={{display:'flex',justifyContent:'space-between'}}><span style={{fontSize:12,color:C.muted}}>Each player owes</span><span style={{fontSize:18,fontWeight:800,color:C.green}}>${priceEach}</span></div>
+        <div style={{display:'flex',justifyContent:'space-between',marginTop:6}}><span style={{fontSize:12,color:C.muted}}>Total ({groupSize} players)</span><span style={{fontSize:14,fontWeight:700,color:C.text}}>${total}</span></div>
+      </div>
+      <Lbl>YOUR PAYMENT METHOD</Lbl>
+      <div style={s.row}>
+        {[['apple','🍎 Apple Pay'],['venmo','💙 Venmo'],['card','💳 Card']].map(([id,label])=>(
+          <div key={id} onClick={()=>setMethod(id)} style={{...s.pill,...(method===id?s.pillActive:{})}}>
+            <span style={{...s.pillText,...(method===id?s.pillTextActive:{}),fontSize:11}}>{label}</span>
+          </div>
+        ))}
+      </div>
+      <Lbl>YOUR PAYMENT</Lbl>
+      <div style={s.payCard}>
+        <Avatar initials="ME" color={C.green}/>
+        <div style={{flex:1}}><div style={{fontSize:13,fontWeight:700,color:C.text}}>You</div><div style={{fontSize:11,color:C.muted,marginTop:2}}>{myPaid?'✅ Paid':`$${priceEach} due`}</div></div>
+        {!myPaid?<button style={s.payBtn} onClick={handleMyPay}>{paying?'...':'💳 Pay'}</button>:<span style={{fontSize:12,fontWeight:700,color:C.green}}>✓ Paid</span>}
+      </div>
+      {friends.length>0&&<><Lbl>REQUEST FROM FRIENDS</Lbl>
+        {friends.map(f=>(
+          <div key={f.id} style={s.payCard}>
+            <Avatar initials={f.initials} color={f.color}/>
+            <div style={{flex:1}}><div style={{fontSize:13,fontWeight:700,color:C.text}}>{f.name}</div><div style={{fontSize:11,color:C.muted,marginTop:2}}>{paidIds.includes(f.id)?'✅ Paid via Venmo':`${f.venmo} · $${priceEach}`}</div></div>
+            {!paidIds.includes(f.id)?<button style={{...s.payBtn,backgroundColor:'rgba(61,149,206,0.15)',borderColor:'#3d95ce',color:'#3d95ce'}} onClick={()=>setPaidIds(p=>[...p,f.id])}>💙 Request</button>:<span style={{fontSize:12,fontWeight:700,color:C.green}}>✓ Paid</span>}
+          </div>
+        ))}</>}
+      <div style={s.infoBox}><span style={{fontSize:12,color:C.muted}}>💡 Tapping Request sends a pre-filled Venmo request for ${priceEach} — your friend just confirms.</span></div>
+    </div>
+  );
+}
+
+function ConfirmScreen({course,groupSize,selTime,selDate,onDone}) {
+  const priceEach=(course.price+1.5).toFixed(2);
+  const total=(parseFloat(priceEach)*groupSize).toFixed(2);
+  const conf='#TM-'+Math.random().toString(36).substring(2,8).toUpperCase();
+  const w=HOURLY_WEATHER[selTime];
+  return (
+    <div>
+      <div style={s.confirmIcon}>✓</div>
+      <div style={{...s.heading,textAlign:'center'}}>You're booked!</div>
+      <div style={{...s.subloc,textAlign:'center',marginBottom:20}}>Have a great round ⛳</div>
+      {w&&<div style={{...s.infoBox,marginBottom:14,textAlign:'center'}}><div style={{fontSize:11,fontWeight:700,color:C.muted,marginBottom:6}}>🌤️ FORECAST FOR {selTime.toUpperCase()}</div><div style={{fontSize:24}}>{w.icon}</div><div style={{fontSize:18,fontWeight:800,color:C.text}}>{w.temp}°F · {w.desc}</div></div>}
+      <div style={s.card}>
+        {[['📍 Course',course.name],['📅 Date',selDate.full],['⏰ Tee Time',selTime],['👥 Players',`${groupSize} players`],['🍺 Bar/Grill',course.barHours!=='Closed Today'?`Open ${course.barHours}`:'Closed Today'],['💳 Each paid',`$${priceEach}`],['✅ Total',`$${total}`],['🎫 Confirmation',conf]].map(([k,v])=>(
+          <div key={k} style={s.confirmRow}><span style={{fontSize:12,color:C.muted}}>{k}</span><span style={{fontSize:12,fontWeight:600,color:C.text,flex:1,textAlign:'right'}}>{v}</span></div>
+        ))}
+      </div>
+      <button style={{...s.searchBtn,marginBottom:10}}>📲 Add to Apple Wallet</button>
+      <button style={{...s.searchBtn,background:'transparent',border:`2px solid ${C.greenDark}`,color:C.green}} onClick={onDone}>Book Another Round →</button>
+    </div>
+  );
+}
+
+function RoundsScreen({rounds,saveScore,onBook}) {
+  const [editId,setEditId]=useState(null);
+  const [scoreIn,setScoreIn]=useState('');
+  const handleSave=(id)=>{const p=parseInt(scoreIn);if(!isNaN(p)&&p>0&&p<200){saveScore(id,p);setEditId(null);setScoreIn('');}};
+  return (
+    <div>
+      <div style={s.logo}>⛳ TIMED</div>
+      <div style={s.heading}>My Rounds</div>
+      {rounds.upcoming.length>0&&<><Lbl>UPCOMING</Lbl>{rounds.upcoming.map(r=>(
+        <div key={r.id} style={{...s.card,borderColor:C.greenDark}}>
+          <div style={{fontSize:11,fontWeight:700,color:C.green,marginBottom:8}}>📅 Upcoming</div>
+          <div style={{fontSize:14,fontWeight:700,color:C.text,marginBottom:4}}>{r.course}</div>
+          <div style={{fontSize:12,color:C.muted,marginBottom:8}}>{r.date} · {r.time} · {r.holes} holes · {r.players} players</div>
+          <div style={s.confirmRow}><span style={{fontSize:12,color:C.muted}}>🎫 {r.confirmation}</span><span style={{fontSize:12,fontWeight:600,color:C.text}}>${r.paid}/player</span></div>
+          <div style={{display:'flex',gap:8,marginTop:10}}>
+            <button style={{...s.payBtn,flex:1}}>📲 View Ticket</button>
+            <button style={{...s.payBtn,flex:1,backgroundColor:'rgba(248,113,113,0.1)',borderColor:'#7f1d1d',color:C.red}}>Cancel</button>
+          </div>
+        </div>
+      ))}</>}
+      <Lbl>PAST ROUNDS</Lbl>
+      {rounds.past.map(r=>(
+        <div key={r.id} style={s.card}>
+          <div style={{fontSize:14,fontWeight:700,color:C.text,marginBottom:4}}>{r.course}</div>
+          <div style={{fontSize:12,color:C.muted,marginBottom:8}}>{r.date} · {r.time} · {r.holes} holes · {r.players} players</div>
+          <div style={s.confirmRow}><span style={{fontSize:12,color:C.muted}}>🎫 {r.confirmation}</span><span style={{fontSize:12,fontWeight:600,color:C.text}}>${r.paid}/player</span></div>
+          <div style={s.scoreSection}>
+            {r.score?(
+              <div style={{display:'flex',alignItems:'center',justifyContent:'space-between'}}>
+                <div style={s.scoreBadge}>
+                  <div style={{fontSize:10,fontWeight:700,color:C.muted,letterSpacing:1}}>SCORE</div>
+                  <div style={{fontSize:22,fontWeight:800,color:C.green}}>{r.score}</div>
+                  <div style={{fontSize:11,color:C.muted}}>{r.score>72?`+${r.score-72}`:r.score<72?`-${72-r.score}`:'E'}</div>
+                </div>
+                <button style={{...s.payBtn,fontSize:11}} onClick={()=>{setEditId(r.id);setScoreIn(r.score.toString());}}>Edit Score</button>
+              </div>
+            ):editId===r.id?(
+              <div style={{display:'flex',gap:8,alignItems:'center'}}>
+                <input style={{flex:1,backgroundColor:C.card2,borderRadius:10,border:`1.5px solid ${C.greenDark}`,padding:'8px 12px',fontSize:15,fontWeight:700,color:C.text}} value={scoreIn} onChange={e=>setScoreIn(e.target.value)} placeholder="Enter score" maxLength={3} autoFocus/>
+                <button style={s.payBtn} onClick={()=>handleSave(r.id)}>Save</button>
+                <button style={{...s.payBtn,background:'none',border:'none',color:C.muted}} onClick={()=>setEditId(null)}>Cancel</button>
+              </div>
+            ):(
+              <button style={{...s.payBtn,background:'none',border:'none',color:C.muted,padding:'6px 0'}} onClick={()=>{setEditId(r.id);setScoreIn('');}}>+ Log Your Score</button>
+            )}
+          </div>
+        </div>
+      ))}
+      <button style={s.searchBtn} onClick={onBook}>⛳ Book a New Round</button>
+    </div>
+  );
+}
+
+function FriendsScreen() {
+  const [sel,setSel]=useState(null);
+  const [search,setSearch]=useState('');
+  if(sel) return <FriendDetail friend={sel} onBack={()=>setSel(null)}/>;
+  const filtered=FRIENDS_DATA.filter(f=>f.name.toLowerCase().includes(search.toLowerCase()));
+  return (
+    <div>
+      <div style={s.logo}>⛳ TIMED</div>
+      <div style={s.heading}>Friends</div>
+      <div style={s.zipWrap}>
+        <span style={{fontSize:15,marginRight:8}}>🔍</span>
+        <input style={s.zipInput} value={search} onChange={e=>setSearch(e.target.value)} placeholder="Search friends..."/>
+      </div>
+      <Lbl>YOUR CREW — {FRIENDS_DATA.length} FRIENDS</Lbl>
+      {filtered.map(f=>(
+        <div key={f.id} style={s.friendCard} onClick={()=>setSel(f)}>
+          <Avatar initials={f.initials} color={f.color} size={44}/>
+          <div style={{flex:1}}>
+            <div style={{fontSize:14,fontWeight:700,color:C.text}}>{f.name}</div>
+            <div style={{fontSize:11,color:C.muted,marginTop:2}}>{f.venmo} · {f.rounds} rounds together</div>
+            <div style={{fontSize:10,color:'#2d6a4f',marginTop:2}}>Last played: {f.lastPlayed}</div>
+          </div>
+          <span style={{color:C.muted,fontSize:18}}>›</span>
+        </div>
+      ))}
+      <button style={{...s.searchBtn,background:'transparent',border:`2px solid ${C.greenDark}`,color:C.green,marginTop:8}}>+ Invite Friends to Timed</button>
+    </div>
+  );
+}
+
+function FriendDetail({friend,onBack}) {
+  return (
+    <div>
+      <button style={s.back} onClick={onBack}>← Back</button>
+      <div style={{textAlign:'center',marginBottom:20}}>
+        <Avatar initials={friend.initials} color={friend.color} size={64}/>
+        <div style={{...s.heading,textAlign:'center',marginTop:10,marginBottom:4}}>{friend.name}</div>
+        <div style={{...s.subloc,textAlign:'center'}}>{friend.venmo}</div>
+      </div>
+      <div style={s.statsRow}>
+        {[[friend.rounds,'Rounds'],[friend.mutualCourses,'Mutual Courses'],['⛳','Golfer']].map(([v,l])=>(
+          <div key={l} style={s.statBox}><div style={s.statVal}>{v}</div><div style={s.statLabel}>{l}</div></div>
+        ))}
+      </div>
+      <div style={s.infoBox}><span style={{fontSize:13,color:C.muted}}>🏌️ Last played together at <span style={{color:C.green,fontWeight:600}}>{friend.lastPlayed}</span></span></div>
+      <Lbl>QUICK ACTIONS</Lbl>
+      <div style={{display:'flex',flexDirection:'column',gap:10}}>
+        <button style={s.searchBtn}>⛳ Invite to a Round</button>
+        <button style={{...s.searchBtn,background:'rgba(61,149,206,0.12)',border:'1.5px solid #3d95ce',color:'#3d95ce'}}>💙 Send Venmo Request</button>
+        <button style={{...s.searchBtn,background:'transparent',border:`1.5px solid ${C.border}`,color:C.muted}}>📞 Call {friend.name.split(' ')[0]}</button>
+      </div>
+      <Lbl>COURSES YOU'VE BOTH PLAYED</Lbl>
+      {COURSES.slice(0,friend.mutualCourses).map(c=>(
+        <div key={c.id} style={{...s.card,padding:12}}>
+          <div style={{fontSize:13,fontWeight:700,color:C.text}}>{c.name}</div>
+          <div style={{fontSize:11,color:C.muted,marginTop:2}}>{c.city} · ★ {c.rating}</div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function ProfileScreen({favorites,unread}) {
+  const favCourses=COURSES.filter(c=>favorites.includes(c.id));
+  return (
+    <div>
+      <div style={s.logo}>⛳ TIMED</div>
+      <div style={{...s.card,textAlign:'center',padding:24,marginBottom:16}}>
+        <Avatar initials="AG" color={C.green} size={60}/>
+        <div style={{fontSize:20,fontWeight:700,color:C.text,marginTop:10,marginBottom:4}}>Agustin Rivas</div>
+        <div style={{fontSize:12,color:C.muted}}>@agustin-rivas · Denver, CO 80202</div>
+        <div style={{display:'inline-block',marginTop:10,padding:'5px 14px',backgroundColor:'rgba(82,183,136,0.1)',border:`1px solid ${C.greenDark}`,borderRadius:20,fontSize:11,fontWeight:700,color:C.green}}>⛳ 8 rounds booked on Timed</div>
+      </div>
+      <div style={s.statsRow}>
+        {[['8','Rounds'],['4','Friends'],['2','Favorites']].map(([v,l])=>(
+          <div key={l} style={s.statBox}><div style={s.statVal}>{v}</div><div style={s.statLabel}>{l}</div></div>
+        ))}
+      </div>
+      <Lbl>❤️ FAVORITE COURSES</Lbl>
+      {favCourses.length===0?<div style={s.infoBox}><span style={{fontSize:13,color:C.muted}}>No favorites yet — tap 🤍 on any course to save it here.</span></div>
+        :favCourses.map(c=><div key={c.id} style={{...s.card,padding:12}}><div style={{fontSize:13,fontWeight:700,color:C.text}}>{c.name}</div><div style={{fontSize:11,color:C.muted,marginTop:2}}>{c.city} · ${c.price}/player · ★ {c.rating}</div></div>)}
+      <Lbl>NOTIFICATIONS {unread>0&&`(${unread} unread)`}</Lbl>
+      {NOTIFICATIONS.slice(0,3).map(n=>(
+        <div key={n.id} style={{...s.card,display:'flex',gap:10,padding:12,borderColor:n.unread?C.greenDark:C.border,backgroundColor:n.unread?'rgba(82,183,136,0.04)':C.card}}>
+          <span style={{fontSize:18}}>{n.icon}</span>
+          <div style={{flex:1}}>
+            <div style={{fontSize:12,color:C.text,lineHeight:1.5,fontWeight:n.unread?600:400}}>{n.text}</div>
+            <div style={{fontSize:10,color:C.muted,marginTop:3}}>{n.time}</div>
+          </div>
+          {n.unread&&<div style={{width:7,height:7,borderRadius:4,backgroundColor:C.green,marginTop:4}}/>}
+        </div>
+      ))}
+      <Lbl>SETTINGS</Lbl>
+      {[['💳','Payment Methods','Visa ••4242, Apple Pay'],['📍','Home Location','Denver, CO 80202'],['🔔','Push Notifications','Enabled'],['📞','Help & Support','Contact us']].map(([icon,label,sub])=>(
+        <div key={label} style={{...s.card,display:'flex',alignItems:'center',padding:12,marginBottom:6,cursor:'pointer'}}>
+          <span style={{fontSize:18,marginRight:10}}>{icon}</span>
+          <div style={{flex:1}}><div style={{fontSize:13,fontWeight:700,color:C.text}}>{label}</div><div style={{fontSize:11,color:C.muted,marginTop:1}}>{sub}</div></div>
+          <span style={{color:C.muted}}>›</span>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function NotifScreen({onBack}) {
+  return (
+    <div>
+      <button style={s.back} onClick={onBack}>← Back</button>
+      <div style={s.heading}>Notifications</div>
+      {NOTIFICATIONS.map(n=>(
+        <div key={n.id} style={{...s.card,display:'flex',gap:10,padding:14,borderColor:n.unread?C.greenDark:C.border}}>
+          <span style={{fontSize:20}}>{n.icon}</span>
+          <div style={{flex:1}}>
+            <div style={{fontSize:13,color:C.text,lineHeight:1.5,fontWeight:n.unread?600:400}}>{n.text}</div>
+            <div style={{fontSize:11,color:C.muted,marginTop:3}}>{n.time}</div>
+          </div>
+          {n.unread&&<div style={{width:7,height:7,borderRadius:4,backgroundColor:C.green,marginTop:5}}/>}
+        </div>
+      ))}
+    </div>
+  );
+}
+
+const root = ReactDOM.createRoot(document.getElementById('root'));
+root.render(<App/>);
+</script>
+</body>
+</html>
