@@ -1,0 +1,1127 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Timed — Find Your Tee Time</title>
+<meta name="description" content="The golf tee time app built for your crew. Search every course near you, split the cost with friends, and book in seconds."/>
+<meta property="og:title" content="Timed — Find Your Tee Time"/>
+<meta property="og:description" content="Search every course near you, split the cost with friends, and book in seconds."/>
+<meta property="og:url" content="https://timed.golf"/>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Instrument+Serif:ital@0;1&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet"/>
+<style>
+:root {
+  --green: #52b788;
+  --green-dark: #2d6a4f;
+  --green-deep: #1a3a28;
+  --bg: #0a120b;
+  --card: #111a12;
+  --text: #e8f5e9;
+  --muted: #4a7c59;
+  --border: #1f3522;
+  --yellow: #f4c242;
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+html { scroll-behavior: smooth; }
+
+body {
+  font-family: 'DM Sans', sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  overflow-x: hidden;
+}
+
+/* ── NOISE TEXTURE OVERLAY ── */
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.04'/%3E%3C/svg%3E");
+  pointer-events: none;
+  z-index: 0;
+  opacity: 0.4;
+}
+
+/* ── NAV ── */
+nav {
+  position: fixed;
+  top: 0; left: 0; right: 0;
+  z-index: 100;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 20px 48px;
+  background: rgba(10,18,11,0.85);
+  backdrop-filter: blur(16px);
+  border-bottom: 1px solid rgba(82,183,136,0.08);
+}
+
+.nav-logo {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 28px;
+  color: var(--green);
+  letter-spacing: 4px;
+  text-decoration: none;
+}
+
+.nav-links {
+  display: flex;
+  gap: 32px;
+  align-items: center;
+  list-style: none;
+}
+
+.nav-links a {
+  color: var(--muted);
+  text-decoration: none;
+  font-size: 14px;
+  font-weight: 500;
+  transition: color 0.2s;
+}
+
+.nav-links a:hover { color: var(--text); }
+
+.nav-cta {
+  background: var(--green-dark);
+  color: var(--text) !important;
+  padding: 10px 22px;
+  border-radius: 50px;
+  font-weight: 600 !important;
+  transition: background 0.2s !important;
+}
+
+.nav-cta:hover { background: var(--green) !important; }
+
+/* ── HERO ── */
+.hero {
+  position: relative;
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  padding: 120px 48px 80px;
+  overflow: hidden;
+}
+
+.hero-bg {
+  position: absolute;
+  inset: 0;
+  background: 
+    radial-gradient(ellipse 80% 60% at 60% 40%, rgba(45,106,79,0.18) 0%, transparent 70%),
+    radial-gradient(ellipse 40% 40% at 20% 80%, rgba(82,183,136,0.08) 0%, transparent 60%),
+    radial-gradient(ellipse 60% 40% at 80% 10%, rgba(82,183,136,0.06) 0%, transparent 60%);
+}
+
+/* Animated golf ball dots */
+.hero-dots {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.dot {
+  position: absolute;
+  border-radius: 50%;
+  background: rgba(82,183,136,0.12);
+  border: 1px solid rgba(82,183,136,0.2);
+  animation: float linear infinite;
+}
+
+@keyframes float {
+  0% { transform: translateY(100vh) rotate(0deg); opacity: 0; }
+  10% { opacity: 1; }
+  90% { opacity: 0.6; }
+  100% { transform: translateY(-100px) rotate(360deg); opacity: 0; }
+}
+
+.hero-content {
+  position: relative;
+  z-index: 2;
+  max-width: 720px;
+}
+
+.hero-eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: rgba(82,183,136,0.1);
+  border: 1px solid rgba(82,183,136,0.25);
+  border-radius: 50px;
+  padding: 8px 18px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--green);
+  letter-spacing: 0.5px;
+  margin-bottom: 28px;
+  animation: fadeUp 0.6s ease forwards;
+}
+
+.hero-title {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: clamp(72px, 10vw, 130px);
+  line-height: 0.92;
+  letter-spacing: 2px;
+  color: var(--text);
+  margin-bottom: 12px;
+  animation: fadeUp 0.6s ease 0.1s both;
+}
+
+.hero-title em {
+  font-family: 'Instrument Serif', serif;
+  font-style: italic;
+  color: var(--green);
+}
+
+.hero-sub {
+  font-size: 20px;
+  color: var(--muted);
+  line-height: 1.6;
+  max-width: 520px;
+  margin-bottom: 40px;
+  font-weight: 400;
+  animation: fadeUp 0.6s ease 0.2s both;
+}
+
+.hero-sub strong { color: var(--text); font-weight: 600; }
+
+/* Waitlist form */
+.waitlist-form {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 24px;
+  animation: fadeUp 0.6s ease 0.3s both;
+  flex-wrap: wrap;
+}
+
+.waitlist-input {
+  flex: 1;
+  min-width: 240px;
+  background: rgba(255,255,255,0.05);
+  border: 1.5px solid var(--border);
+  border-radius: 50px;
+  padding: 16px 24px;
+  font-size: 15px;
+  color: var(--text);
+  font-family: 'DM Sans', sans-serif;
+  outline: none;
+  transition: border-color 0.2s;
+}
+
+.waitlist-input:focus { border-color: var(--green); }
+.waitlist-input::placeholder { color: var(--muted); }
+
+.waitlist-btn {
+  background: linear-gradient(135deg, var(--green-dark), var(--green));
+  border: none;
+  border-radius: 50px;
+  padding: 16px 32px;
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--text);
+  cursor: pointer;
+  transition: all 0.2s;
+  white-space: nowrap;
+  font-family: 'DM Sans', sans-serif;
+}
+
+.waitlist-btn:hover { transform: translateY(-2px); box-shadow: 0 8px 24px rgba(82,183,136,0.3); }
+
+.waitlist-note {
+  font-size: 13px;
+  color: var(--muted);
+  animation: fadeUp 0.6s ease 0.35s both;
+}
+
+.hero-stats {
+  display: flex;
+  gap: 32px;
+  margin-top: 48px;
+  animation: fadeUp 0.6s ease 0.4s both;
+  flex-wrap: wrap;
+}
+
+.hero-stat-num {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 36px;
+  color: var(--green);
+  letter-spacing: 1px;
+  line-height: 1;
+}
+
+.hero-stat-label {
+  font-size: 13px;
+  color: var(--muted);
+  margin-top: 4px;
+}
+
+/* Phone mockup */
+.hero-phone {
+  position: absolute;
+  right: 6%;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 280px;
+  animation: fadeUp 0.8s ease 0.2s both;
+  display: none;
+}
+
+@media (min-width: 1100px) { .hero-phone { display: block; } }
+
+.phone-frame {
+  width: 100%;
+  background: #111a12;
+  border-radius: 40px;
+  border: 1px solid rgba(255,255,255,0.08);
+  box-shadow: 0 40px 80px rgba(0,0,0,0.7), 0 0 0 1px rgba(82,183,136,0.1);
+  overflow: hidden;
+  padding: 12px;
+}
+
+.phone-screen {
+  background: #0d1b0f;
+  border-radius: 30px;
+  padding: 20px 16px;
+  min-height: 500px;
+}
+
+.phone-status {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 14px;
+  font-size: 11px;
+  color: rgba(232,245,233,0.5);
+  font-weight: 600;
+}
+
+.phone-logo {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 18px;
+  color: var(--green);
+  letter-spacing: 3px;
+  margin-bottom: 16px;
+}
+
+.phone-clock {
+  background: #161f17;
+  border-radius: 12px;
+  padding: 12px;
+  margin-bottom: 14px;
+  border: 1px solid #1f3522;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.phone-clock-time { font-size: 20px; font-weight: 800; color: var(--text); }
+.phone-clock-weather { font-size: 11px; color: var(--muted); text-align: right; }
+
+.phone-label { font-size: 9px; font-weight: 700; color: var(--muted); letter-spacing: 1px; text-transform: uppercase; margin-bottom: 6px; }
+
+.phone-pills { display: flex; gap: 6px; margin-bottom: 14px; }
+.phone-pill { flex: 1; padding: 8px 0; background: #161f17; border-radius: 10px; border: 1.5px solid #1f3522; text-align: center; font-size: 11px; font-weight: 700; color: var(--muted); }
+.phone-pill.active { border-color: var(--green); background: rgba(82,183,136,0.12); color: var(--green); }
+
+.phone-course {
+  background: #161f17;
+  border-radius: 14px;
+  padding: 12px;
+  margin-bottom: 8px;
+  border: 1px solid #1f3522;
+}
+
+.phone-course-name { font-size: 12px; font-weight: 700; color: var(--text); margin-bottom: 3px; }
+.phone-course-sub { font-size: 10px; color: var(--muted); margin-bottom: 8px; }
+.phone-course-times { display: flex; gap: 4px; flex-wrap: wrap; }
+.phone-time { padding: 4px 8px; background: rgba(82,183,136,0.1); border-radius: 6px; border: 1px solid #2d6a4f; font-size: 10px; font-weight: 700; color: var(--green); }
+
+/* ── FEATURES SECTION ── */
+.section {
+  position: relative;
+  z-index: 1;
+  padding: 100px 48px;
+}
+
+.section-label {
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: var(--green);
+  margin-bottom: 12px;
+  text-align: center;
+}
+
+.section-title {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: clamp(42px, 6vw, 72px);
+  text-align: center;
+  line-height: 1;
+  letter-spacing: 1px;
+  margin-bottom: 16px;
+}
+
+.section-title em {
+  font-family: 'Instrument Serif', serif;
+  font-style: italic;
+  color: var(--green);
+}
+
+.section-sub {
+  text-align: center;
+  color: var(--muted);
+  font-size: 17px;
+  max-width: 540px;
+  margin: 0 auto 64px;
+  line-height: 1.6;
+}
+
+.features-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 20px;
+  max-width: 1100px;
+  margin: 0 auto;
+}
+
+.feature-card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 24px;
+  padding: 32px;
+  transition: transform 0.2s, border-color 0.2s;
+  position: relative;
+  overflow: hidden;
+}
+
+.feature-card::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, var(--green-dark), transparent);
+  opacity: 0;
+  transition: opacity 0.3s;
+}
+
+.feature-card:hover { transform: translateY(-4px); border-color: var(--green-dark); }
+.feature-card:hover::before { opacity: 1; }
+
+.feature-icon {
+  width: 52px; height: 52px;
+  background: rgba(82,183,136,0.1);
+  border: 1px solid var(--green-dark);
+  border-radius: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 24px;
+  margin-bottom: 20px;
+}
+
+.feature-title {
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--text);
+  margin-bottom: 10px;
+}
+
+.feature-desc {
+  font-size: 14px;
+  color: var(--muted);
+  line-height: 1.65;
+}
+
+/* ── HOW IT WORKS ── */
+.how-section {
+  background: var(--card);
+  border-top: 1px solid var(--border);
+  border-bottom: 1px solid var(--border);
+}
+
+.steps {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 0;
+  max-width: 1000px;
+  margin: 0 auto;
+}
+
+.step {
+  padding: 40px 32px;
+  border-right: 1px solid var(--border);
+  text-align: center;
+}
+
+.step:last-child { border-right: none; }
+
+.step-num {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 56px;
+  color: var(--green-deep);
+  line-height: 1;
+  margin-bottom: 8px;
+}
+
+.step-icon { font-size: 28px; margin-bottom: 12px; }
+
+.step-title { font-size: 16px; font-weight: 700; color: var(--text); margin-bottom: 8px; }
+.step-desc { font-size: 13px; color: var(--muted); line-height: 1.6; }
+
+/* ── SPLIT SECTION ── */
+.split {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 80px;
+  align-items: center;
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 100px 48px;
+}
+
+@media (max-width: 900px) {
+  .split { grid-template-columns: 1fr; padding: 60px 24px; gap: 40px; }
+}
+
+.split-title {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: clamp(40px, 5vw, 64px);
+  line-height: 1;
+  letter-spacing: 1px;
+  margin-bottom: 16px;
+}
+
+.split-title em {
+  font-family: 'Instrument Serif', serif;
+  font-style: italic;
+  color: var(--green);
+}
+
+.split-desc { font-size: 16px; color: var(--muted); line-height: 1.7; margin-bottom: 28px; }
+
+.split-features { display: flex; flex-direction: column; gap: 14px; }
+
+.split-feature {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+}
+
+.split-feature-icon {
+  width: 32px; height: 32px;
+  background: rgba(82,183,136,0.1);
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+.split-feature-text { font-size: 14px; color: var(--muted); line-height: 1.5; }
+.split-feature-text strong { color: var(--text); font-weight: 600; }
+
+/* Group pay mockup */
+.pay-mockup {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 28px;
+  padding: 24px;
+  box-shadow: 0 24px 64px rgba(0,0,0,0.4);
+}
+
+.pay-header { margin-bottom: 20px; }
+.pay-title-text { font-size: 18px; font-weight: 700; color: var(--text); }
+.pay-sub-text { font-size: 13px; color: var(--muted); margin-top: 2px; }
+
+.pay-progress {
+  background: #1a2e1c;
+  border-radius: 20px;
+  height: 6px;
+  margin-bottom: 20px;
+  overflow: hidden;
+}
+
+.pay-progress-bar {
+  height: 100%;
+  width: 75%;
+  background: linear-gradient(90deg, var(--green-dark), var(--green));
+  border-radius: 20px;
+}
+
+.pay-person {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px;
+  background: #1a2e1c;
+  border-radius: 14px;
+  margin-bottom: 8px;
+  border: 1px solid var(--border);
+}
+
+.pay-avatar {
+  width: 36px; height: 36px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  font-weight: 800;
+  flex-shrink: 0;
+}
+
+.pay-person-name { font-size: 14px; font-weight: 600; color: var(--text); flex: 1; }
+.pay-person-sub { font-size: 11px; color: var(--muted); }
+.pay-amount { font-size: 14px; font-weight: 800; color: var(--green); }
+.pay-status-paid { font-size: 11px; font-weight: 700; color: var(--green); }
+
+.pay-venmo-btn {
+  padding: 6px 12px;
+  background: rgba(61,149,206,0.12);
+  border: 1px solid rgba(61,149,206,0.3);
+  border-radius: 8px;
+  font-size: 11px;
+  font-weight: 700;
+  color: #3d95ce;
+}
+
+/* ── WAITLIST SECTION ── */
+.waitlist-section {
+  text-align: center;
+  padding: 100px 48px;
+  position: relative;
+  z-index: 1;
+}
+
+.waitlist-section::before {
+  content: '';
+  position: absolute;
+  top: 50%; left: 50%;
+  transform: translate(-50%, -50%);
+  width: 600px; height: 600px;
+  background: radial-gradient(circle, rgba(45,106,79,0.2) 0%, transparent 70%);
+  pointer-events: none;
+}
+
+.waitlist-tabs {
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+  margin-bottom: 48px;
+}
+
+.waitlist-tab {
+  padding: 10px 24px;
+  border-radius: 50px;
+  border: 1.5px solid var(--border);
+  background: transparent;
+  color: var(--muted);
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+  font-family: 'DM Sans', sans-serif;
+}
+
+.waitlist-tab.active {
+  border-color: var(--green);
+  background: rgba(82,183,136,0.1);
+  color: var(--green);
+}
+
+.waitlist-form-large {
+  display: flex;
+  gap: 12px;
+  max-width: 520px;
+  margin: 0 auto 16px;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.waitlist-count {
+  font-size: 13px;
+  color: var(--muted);
+  margin-top: 16px;
+}
+
+.waitlist-count strong { color: var(--green); }
+
+/* ── FOOTER ── */
+footer {
+  border-top: 1px solid var(--border);
+  padding: 40px 48px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 16px;
+  position: relative;
+  z-index: 1;
+}
+
+.footer-logo {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 22px;
+  color: var(--green);
+  letter-spacing: 3px;
+}
+
+.footer-links { display: flex; gap: 24px; }
+.footer-links a { font-size: 13px; color: var(--muted); text-decoration: none; transition: color 0.2s; }
+.footer-links a:hover { color: var(--text); }
+
+.footer-copy { font-size: 13px; color: var(--muted); }
+
+/* ── ANIMATIONS ── */
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.reveal {
+  opacity: 1;
+  transform: translateY(0);
+  transition: opacity 0.6s ease, transform 0.6s ease;
+}
+
+.reveal.hidden {
+  opacity: 0;
+  transform: translateY(24px);
+}
+
+.reveal.visible { opacity: 1; transform: translateY(0); }
+
+/* ── SUCCESS STATE ── */
+.success-msg {
+  display: none;
+  color: var(--green);
+  font-size: 15px;
+  font-weight: 600;
+  margin-top: 8px;
+}
+
+/* ── RESPONSIVE ── */
+@media (max-width: 768px) {
+  nav { padding: 16px 24px; }
+  .nav-links { display: none; }
+  .hero { padding: 100px 24px 60px; }
+  .section { padding: 60px 24px; }
+  .split { padding: 60px 24px; }
+  .waitlist-section { padding: 60px 24px; }
+  footer { padding: 32px 24px; flex-direction: column; text-align: center; }
+  .steps { grid-template-columns: 1fr; }
+  .step { border-right: none; border-bottom: 1px solid var(--border); }
+  .step:last-child { border-bottom: none; }
+}
+
+/* ── DEMO BUTTON ── */
+.demo-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--muted);
+  font-size: 14px;
+  font-weight: 600;
+  text-decoration: none;
+  padding: 12px 20px;
+  border: 1.5px solid var(--border);
+  border-radius: 50px;
+  transition: all 0.2s;
+  margin-left: 12px;
+}
+
+.demo-link:hover { border-color: var(--green); color: var(--green); }
+
+.badge-row {
+  display: flex;
+  gap: 10px;
+  margin-top: 32px;
+  flex-wrap: wrap;
+  animation: fadeUp 0.6s ease 0.45s both;
+}
+
+.badge {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: var(--muted);
+  font-weight: 500;
+}
+
+.badge::before { content: '✓'; color: var(--green); font-weight: 700; }
+</style>
+</head>
+<body>
+
+<!-- ── FLOATING DOTS ── -->
+<div class="hero-dots" aria-hidden="true">
+  <div class="dot" style="width:12px;height:12px;left:15%;animation-duration:18s;animation-delay:0s;"></div>
+  <div class="dot" style="width:8px;height:8px;left:35%;animation-duration:22s;animation-delay:3s;"></div>
+  <div class="dot" style="width:16px;height:16px;left:55%;animation-duration:16s;animation-delay:6s;"></div>
+  <div class="dot" style="width:10px;height:10px;left:75%;animation-duration:20s;animation-delay:2s;"></div>
+  <div class="dot" style="width:6px;height:6px;left:90%;animation-duration:24s;animation-delay:8s;"></div>
+  <div class="dot" style="width:14px;height:14px;left:5%;animation-duration:19s;animation-delay:11s;"></div>
+  <div class="dot" style="width:9px;height:9px;left:45%;animation-duration:21s;animation-delay:14s;"></div>
+</div>
+
+<!-- ── NAV ── -->
+<nav>
+  <a href="/" class="nav-logo">⛳ TIMED</a>
+  <ul class="nav-links">
+    <li><a href="#features">Features</a></li>
+    <li><a href="#how">How It Works</a></li>
+    <li><a href="#courses">For Courses</a></li>
+    <li><a href="#waitlist" class="nav-cta">Join Waitlist</a></li>
+    <li><a href="/prototype" style="background:rgba(82,183,136,0.12);border:1.5px solid #2d6a4f;padding:9px 18px;border-radius:50px;color:#52b788 !important;font-weight:700 !important;">▶ Live Demo</a></li>
+  </ul>
+</nav>
+
+<!-- ── HERO ── -->
+<section class="hero">
+  <div class="hero-bg"></div>
+  <div class="hero-content">
+    <div class="hero-eyebrow">⛳ Coming Soon to iOS & Android</div>
+    <h1 class="hero-title">GOLF<br><em>your way.</em></h1>
+    <p class="hero-sub">
+      <strong>3 of you. Available 1–5pm. Done.</strong><br>
+      Search every course near you at once, see real tee times, split the cost with your crew, and book in seconds.
+    </p>
+
+    <div class="waitlist-form">
+      <input type="email" class="waitlist-input" placeholder="Enter your email" id="hero-email"/>
+      <button class="waitlist-btn" onclick="joinWaitlist('hero')">Get Early Access ⛳</button>
+      <a href="/prototype" class="demo-link">▶ Try Live Demo</a>
+    </div>
+    <p class="waitlist-note" id="hero-success" style="display:none;color:#52b788;font-weight:600;">✓ You're on the list! We'll be in touch.</p>
+    <p class="waitlist-note">Free to join. First access when we launch.</p>
+
+    <div class="badge-row">
+      <span class="badge">No booking fees on waitlist</span>
+      <span class="badge">iOS & Android</span>
+      <span class="badge">Group splitting built in</span>
+    </div>
+
+    <div class="hero-stats">
+      <div>
+        <div class="hero-stat-num">9K+</div>
+        <div class="hero-stat-label">Courses in the US</div>
+      </div>
+      <div>
+        <div class="hero-stat-num">30s</div>
+        <div class="hero-stat-label">Average booking time</div>
+      </div>
+      <div>
+        <div class="hero-stat-num">$0</div>
+        <div class="hero-stat-label">To download</div>
+      </div>
+    </div>
+
+    <a href="/prototype" class="demo-banner" style="display:inline-flex;align-items:center;gap:14px;margin-top:28px;padding:16px 24px;background:rgba(82,183,136,0.08);border:1.5px solid #2d6a4f;border-radius:20px;text-decoration:none;transition:all 0.25s;animation:fadeUp 0.6s ease 0.5s both;" onmouseover="this.style.background='rgba(82,183,136,0.16)';this.style.borderColor='#52b788';" onmouseout="this.style.background='rgba(82,183,136,0.08)';this.style.borderColor='#2d6a4f';">
+      <div style="width:46px;height:46px;background:#161f17;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:24px;flex-shrink:0;">📱</div>
+      <div>
+        <div style="font-size:15px;font-weight:700;color:#e8f5e9;">Try the Live App Demo</div>
+        <div style="font-size:13px;color:#4a7c59;margin-top:2px;">Tap through the full experience — no download needed →</div>
+      </div>
+    </a>
+  </div>
+
+  <!-- Phone Mockup -->
+  <div class="hero-phone">
+    <div class="phone-frame">
+      <div class="phone-screen">
+        <div class="phone-status"><span>9:41</span><span>100%</span></div>
+        <div class="phone-logo">⛳ TIMED</div>
+        <div class="phone-clock">
+          <div>
+            <div class="phone-clock-time">1:24 PM</div>
+            <div style="font-size:10px;color:#4a7c59;margin-top:2px;">Saturday, Mar 5</div>
+          </div>
+          <div class="phone-clock-weather">☀️<br><span style="color:#e8f5e9;font-weight:700;font-size:13px;">72°F</span><br><span style="font-size:10px;">Sunny</span></div>
+        </div>
+        <div class="phone-label">HOW MANY PLAYERS?</div>
+        <div class="phone-pills">
+          <div class="phone-pill">Solo</div>
+          <div class="phone-pill">2x</div>
+          <div class="phone-pill active">3x</div>
+          <div class="phone-pill">4x</div>
+        </div>
+        <div class="phone-label">AVAILABLE BETWEEN</div>
+        <div style="background:#161f17;border-radius:12px;padding:10px 12px;margin-bottom:14px;border:1px solid #1f3522;display:flex;justify-content:space-between;align-items:center;">
+          <div style="text-align:center;">
+            <div style="font-size:9px;color:#4a7c59;letter-spacing:1px;margin-bottom:3px;">FROM</div>
+            <div style="font-size:13px;font-weight:800;color:#52b788;">1:00 PM</div>
+          </div>
+          <div style="color:#2d6a4f;font-weight:700;">→</div>
+          <div style="text-align:center;">
+            <div style="font-size:9px;color:#4a7c59;letter-spacing:1px;margin-bottom:3px;">TO</div>
+            <div style="font-size:13px;font-weight:800;color:#52b788;">5:00 PM</div>
+          </div>
+        </div>
+        <div class="phone-course">
+          <div class="phone-course-name">Fossil Trace Golf Club</div>
+          <div class="phone-course-sub">📍 2.1 mi · ★ 4.8 · $65/player</div>
+          <div class="phone-course-times">
+            <div class="phone-time">1:00 PM</div>
+            <div class="phone-time">2:12 PM</div>
+            <div class="phone-time">3:30 PM</div>
+          </div>
+        </div>
+        <div class="phone-course">
+          <div class="phone-course-name">Arrowhead Golf Club</div>
+          <div class="phone-course-sub">📍 6.3 mi · ★ 4.9 · $95/player</div>
+          <div class="phone-course-times">
+            <div class="phone-time">1:00 PM</div>
+            <div class="phone-time">2:00 PM</div>
+            <div class="phone-time">3:00 PM</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ── FEATURES ── -->
+<section class="section" id="features">
+  <p class="section-label reveal">Everything You Need</p>
+  <h2 class="section-title reveal">Built for <em>your crew.</em></h2>
+  <p class="section-sub reveal">No more checking five different websites. Timed pulls every available tee time near you into one place.</p>
+
+  <div class="features-grid">
+    <div class="feature-card reveal">
+      <div class="feature-icon">🗺️</div>
+      <div class="feature-title">Search by Location & Radius</div>
+      <div class="feature-desc">Enter your zip code, set how far you're willing to travel — 5, 10, 20, 50 miles — and see every matching course instantly.</div>
+    </div>
+    <div class="feature-card reveal">
+      <div class="feature-icon">⏰</div>
+      <div class="feature-title">Time Window Search</div>
+      <div class="feature-desc">Tell us you're free between 1pm and 5pm and we'll only show you courses with tee times that actually fit. No more manual filtering.</div>
+    </div>
+    <div class="feature-card reveal">
+      <div class="feature-icon">💸</div>
+      <div class="feature-title">Group Pay & Split</div>
+      <div class="feature-desc">One person books, everyone pays their share. Pre-filled Venmo, Apple Pay, and Cash App requests sent to your crew automatically.</div>
+    </div>
+    <div class="feature-card reveal">
+      <div class="feature-icon">🌤️</div>
+      <div class="feature-title">Hourly Weather Forecast</div>
+      <div class="feature-desc">See the temperature and conditions for every tee time slot. Know before you go whether to bring a jacket or sunscreen.</div>
+    </div>
+    <div class="feature-card reveal">
+      <div class="feature-icon">🍺</div>
+      <div class="feature-title">Bar & Grill Hours</div>
+      <div class="feature-desc">See if the 19th hole is open before you book. Every course shows their bar and grill hours right on the listing.</div>
+    </div>
+    <div class="feature-card reveal">
+      <div class="feature-icon">📊</div>
+      <div class="feature-title">Score Tracking</div>
+      <div class="feature-desc">Log your score after every round. Track your history, see your progress, and show your friends who the real golfer is.</div>
+    </div>
+  </div>
+</section>
+
+<!-- ── HOW IT WORKS ── -->
+<section class="how-section section" id="how">
+  <p class="section-label reveal">Simple by Design</p>
+  <h2 class="section-title reveal">From idea to <em>tee box</em><br>in 60 seconds.</h2>
+  <p class="section-sub reveal">We killed every unnecessary step between "let's golf" and actually golfing.</p>
+
+  <div class="steps reveal">
+    <div class="step">
+      <div class="step-num">01</div>
+      <div class="step-icon">📍</div>
+      <div class="step-title">Set Your Location & Window</div>
+      <div class="step-desc">Enter your zip, set how far you'll drive, pick how many are playing, and choose your available time window.</div>
+    </div>
+    <div class="step">
+      <div class="step-num">02</div>
+      <div class="step-icon">⛳</div>
+      <div class="step-title">See Every Available Tee Time</div>
+      <div class="step-desc">Every course near you with open slots in your window appears instantly — sorted by distance, price, or rating.</div>
+    </div>
+    <div class="step">
+      <div class="step-num">03</div>
+      <div class="step-icon">💸</div>
+      <div class="step-title">Split & Book</div>
+      <div class="step-desc">Pick your time, split the cost with your group via Venmo or Apple Pay, and you're confirmed. That's it.</div>
+    </div>
+    <div class="step">
+      <div class="step-num">04</div>
+      <div class="step-icon">🏌️</div>
+      <div class="step-title">Show Up & Play</div>
+      <div class="step-desc">Your confirmation is in the app. Add to Apple Wallet. Show at the course. Go play.</div>
+    </div>
+  </div>
+</section>
+
+<!-- ── GROUP PAY SPLIT ── -->
+<section style="position:relative;z-index:1;">
+  <div class="split">
+    <div>
+      <p style="font-size:12px;font-weight:700;letter-spacing:2px;color:var(--green);text-transform:uppercase;margin-bottom:12px;" class="reveal">Group Pay</p>
+      <h2 class="split-title reveal">Stop chasing<br><em>your friends</em><br>for money.</h2>
+      <p class="split-desc reveal">One person books. Everyone else gets an automatic payment request. Pre-filled amount. One tap to confirm. Done before you even leave the parking lot.</p>
+      <div class="split-features reveal">
+        <div class="split-feature">
+          <div class="split-feature-icon">💙</div>
+          <div class="split-feature-text"><strong>Venmo deep links</strong> — opens directly in Venmo with the exact amount pre-filled</div>
+        </div>
+        <div class="split-feature">
+          <div class="split-feature-icon">🍎</div>
+          <div class="split-feature-text"><strong>Apple Pay</strong> — one tap payment, instant confirmation</div>
+        </div>
+        <div class="split-feature">
+          <div class="split-feature-icon">💵</div>
+          <div class="split-feature-text"><strong>Cash App</strong> — same seamless flow for Android users</div>
+        </div>
+        <div class="split-feature">
+          <div class="split-feature-icon">⏰</div>
+          <div class="split-feature-text"><strong>Auto reminders</strong> — we nudge anyone who hasn't paid yet so you don't have to</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="pay-mockup reveal">
+      <div class="pay-header">
+        <div class="pay-title-text">Split the Cost 💸</div>
+        <div class="pay-sub-text">Fossil Trace · 2:12 PM · Today</div>
+      </div>
+      <div style="display:flex;justify-content:space-between;margin-bottom:8px;">
+        <span style="font-size:13px;color:var(--muted);">3 of 4 paid</span>
+        <span style="font-size:13px;color:var(--green);font-weight:600;">$199.50 / $266.00</span>
+      </div>
+      <div class="pay-progress"><div class="pay-progress-bar"></div></div>
+
+      <div class="pay-person">
+        <div class="pay-avatar" style="background:rgba(82,183,136,0.2);color:#52b788;border:2px solid rgba(82,183,136,0.4);">ME</div>
+        <div style="flex:1"><div class="pay-person-name">You</div><div class="pay-person-sub">Paid with Apple Pay</div></div>
+        <div class="pay-status-paid">✓ Paid</div>
+      </div>
+
+      <div class="pay-person">
+        <div class="pay-avatar" style="background:rgba(59,130,246,0.2);color:#3b82f6;border:2px solid rgba(59,130,246,0.3);">JM</div>
+        <div style="flex:1"><div class="pay-person-name">Jake M.</div><div class="pay-person-sub">Paid via Venmo</div></div>
+        <div class="pay-status-paid">✓ Paid</div>
+      </div>
+
+      <div class="pay-person">
+        <div class="pay-avatar" style="background:rgba(236,72,153,0.2);color:#ec4899;border:2px solid rgba(236,72,153,0.3);">ST</div>
+        <div style="flex:1"><div class="pay-person-name">Sara T.</div><div class="pay-person-sub">Paid via Venmo</div></div>
+        <div class="pay-status-paid">✓ Paid</div>
+      </div>
+
+      <div class="pay-person" style="border-color:rgba(248,191,36,0.3);">
+        <div class="pay-avatar" style="background:rgba(249,115,22,0.2);color:#f97316;border:2px solid rgba(249,115,22,0.3);">CR</div>
+        <div style="flex:1"><div class="pay-person-name">Chris R.</div><div class="pay-person-sub">@chrisr22 · $66.50</div></div>
+        <div class="pay-venmo-btn">💙 Request</div>
+      </div>
+
+      <div style="background:rgba(82,183,136,0.07);border-radius:12px;padding:12px;margin-top:14px;border:1px solid var(--border);">
+        <div style="font-size:12px;color:var(--muted);line-height:1.5;">💡 Chris gets a pre-filled Venmo request for $66.50 — they just tap confirm.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ── FOR GOLF COURSES ── -->
+<section class="section" id="courses" style="background:var(--card);border-top:1px solid var(--border);border-bottom:1px solid var(--border);">
+  <p class="section-label reveal">For Golf Courses</p>
+  <h2 class="section-title reveal">Reach the next<br><em>generation</em> of golfers.</h2>
+  <p class="section-sub reveal">Young golfers aren't calling your pro shop. They're on their phones. Timed puts your tee times directly in front of them.</p>
+
+  <div class="features-grid">
+    <div class="feature-card reveal">
+      <div class="feature-icon">📱</div>
+      <div class="feature-title">Mobile-First Audience</div>
+      <div class="feature-desc">Timed is built specifically for the 18–35 golfer demographic that GolfNow and TeeOff aren't reaching effectively.</div>
+    </div>
+    <div class="feature-card reveal">
+      <div class="feature-icon">💰</div>
+      <div class="feature-title">No Barter, Fair Pricing</div>
+      <div class="feature-desc">We don't take your tee times as payment. Simple monthly fee. You keep control of your inventory and pricing.</div>
+    </div>
+    <div class="feature-card reveal">
+      <div class="feature-icon">⚡</div>
+      <div class="feature-title">Fill Last-Minute Slots</div>
+      <div class="feature-desc">Promote same-day discounted tee times directly to golfers nearby who are actively looking to play today.</div>
+    </div>
+  </div>
+
+  <div style="text-align:center;margin-top:48px;" class="reveal">
+    <p style="font-size:16px;color:var(--muted);margin-bottom:20px;">Interested in listing your course on Timed?</p>
+    <a href="/cdn-cgi/l/email-protection#d0b3bfa5a2a3b5a390a4b9bdb5b4feb7bfbcb6" style="display:inline-flex;align-items:center;gap:8px;background:var(--green-dark);color:var(--text);text-decoration:none;padding:16px 32px;border-radius:50px;font-weight:700;font-size:15px;transition:all 0.2s;" onmouseover="this.style.background='#52b788'" onmouseout="this.style.background='#2d6a4f'">
+      ⛳ Partner With Timed
+    </a>
+  </div>
+</section>
+
+<!-- ── WAITLIST ── -->
+<section class="waitlist-section" id="waitlist">
+  <p class="section-label reveal">Early Access</p>
+  <h2 class="section-title reveal">Be first on the<br><em>tee sheet.</em></h2>
+  <p class="section-sub reveal">We're launching in Denver first. Join the waitlist and get free access to premium features for your first 6 months.</p>
+
+  <div class="waitlist-tabs reveal">
+    <button class="waitlist-tab active" onclick="switchTab(this,'golfer')">🏌️ I'm a Golfer</button>
+    <button class="waitlist-tab" onclick="switchTab(this,'course')">⛳ I Run a Course</button>
+  </div>
+
+  <div class="waitlist-form-large reveal">
+    <input type="email" class="waitlist-input" placeholder="your@email.com" id="waitlist-email" style="max-width:300px;"/>
+    <button class="waitlist-btn" onclick="joinWaitlist('waitlist')">Join the Waitlist</button>
+  </div>
+  <p id="waitlist-success" style="display:none;color:#52b788;font-weight:600;font-size:15px;margin-top:12px;">✓ You're on the list! We'll reach out soon.</p>
+  <p class="waitlist-count reveal"><strong>247 golfers</strong> already on the waitlist in Denver</p>
+</section>
+
+<!-- ── FOOTER ── -->
+<footer>
+  <div class="footer-logo">⛳ TIMED</div>
+  <div class="footer-links">
+    <a href="#features">Features</a>
+    <a href="#how">How It Works</a>
+    <a href="#courses">For Courses</a>
+    <a href="/cdn-cgi/l/email-protection#1078757c7c7f5064797d75743e777f7c76">Contact</a>
+    <a href="/privacy">Privacy</a>
+  </div>
+  <div class="footer-copy">© 2025 Timed. timed.golf</div>
+</footer>
+
+<script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script>
+// Reveal on scroll
+const observer = new IntersectionObserver((entries) => {
+  entries.forEach(e => { if (e.isIntersecting) { e.target.classList.remove('hidden'); e.target.classList.add('visible'); } });
+}, { threshold: 0.08 });
+document.querySelectorAll('.reveal').forEach(el => { el.classList.add('hidden'); observer.observe(el); });
+
+// Waitlist form
+function joinWaitlist(type) {
+  const input = document.getElementById(type === 'hero' ? 'hero-email' : 'waitlist-email');
+  const success = document.getElementById(type === 'hero' ? 'hero-success' : 'waitlist-success');
+  if (input.value && input.value.includes('@')) {
+    input.style.display = 'none';
+    if (type === 'hero') {
+      document.querySelector('.waitlist-btn').style.display = 'none';
+    }
+    success.style.display = 'block';
+  } else {
+    input.style.borderColor = '#f87171';
+    setTimeout(() => input.style.borderColor = '', 1500);
+  }
+}
+
+// Tab switcher
+function switchTab(btn, type) {
+  document.querySelectorAll('.waitlist-tab').forEach(t => t.classList.remove('active'));
+  btn.classList.add('active');
+  const placeholder = type === 'golfer' ? 'your@email.com' : 'gm@yourcourse.com';
+  document.getElementById('waitlist-email').placeholder = placeholder;
+}
+
+// Enter key on inputs
+document.getElementById('hero-email').addEventListener('keydown', e => { if (e.key === 'En
